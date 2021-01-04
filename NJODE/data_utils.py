@@ -449,8 +449,6 @@ if __name__ == '__main__':
     # create_dataset('HestonWOFeller', hyperparam_dict=h)
     #
     # print()
-
-
     num = np.random.randint(0, 2000)
 
     # Load in the Heston dataset at a given time ID
@@ -470,9 +468,10 @@ if __name__ == '__main__':
     times = np.where(observed_dates[num] == 1)[0]
 
     # Define the observed checkpoints and the values at each
-    checkpts = np.concatenate((times, np.array([100])))
+    checkpts = np.concatenate((np.array([0]), times, np.array([100])))
     values = stock_paths[num][checkpts]
     checkpts = checkpts / 100
+    print(values)
     print(checkpts)
 
     # Define base variables and arrays to hold the conditional expectation
@@ -512,6 +511,16 @@ if __name__ == '__main__':
     plt.plot(condtimes, condexps, '--')
     plt.plot(stock_paths[num])
     plt.scatter(times, stock_paths[num][times])
-    plt.show()
 
+    # TODO - work out stacking time alongside values
+    import torchcde
+    coeffs = torchcde.linear_interpolation_coeffs(torch.cat([torch.from_numpy(checkpts), torch.from_numpy(values.squeeze())]), torch.from_numpy(checkpts))
+    print(coeffs)
+
+    X = torchcde.LinearInterpolation(coeffs, torch.from_numpy(checkpts))
+    path = X.evaluate(torch.linspace(0, 1, 101))
+    print(path)
+
+    plt.plot(torch.linspace(0, 100, 101), path[:, 1])
+    plt.show()
     pass
